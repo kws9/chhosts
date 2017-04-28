@@ -1,0 +1,144 @@
+#!/bin/sh
+
+CHHOSTS_VESION="0.0.1"
+
+cd $(dirname $0)
+DEFAULT_HOSTS=default
+BASE_DIR=$(cd $(dirname $(readlink $0 || echo $0)) ; cd ../hosts ; pwd)
+NOW_HOSTS=${BASE_DIR}/now_hosts.txt
+HOSTS=/etc/hosts
+FIRST_ARG=$1
+
+###############
+# usage function
+###############
+
+function usage() {
+
+    echo 'Usage:'
+    echo '    chhosts [hosts name]            => change hosts'
+    echo '    chhosts [-n|--now]              => confirm hosts'
+    echo '    chhosts [-a|--add] [hosts name] => add hosts'
+    echo '    chhosts [-r|--rm ] [hosts name] => remove hosts'
+    echo '    chhosts [-f|--fix] [hosts name] => fix hosts'
+    echo '---- hosts names ----'
+    for i in `ls ${BASE_DIR}/ | grep -v now_hosts | grep -v chhosts`
+    do
+        echo $i | cut -d'.' -f1
+    done
+    echo '---------------------'
+
+}
+
+###############
+# function of show hosts
+###############
+
+function show_hosts() {
+
+    echo ''
+    echo 'now = '`cat ${NOW_HOSTS}`
+    echo '---------------------'
+    cat ${HOSTS}
+    echo '---------------------'    
+
+}
+
+###############
+# option check
+###############
+
+case ${FIRST_ARG} in
+    -a|--add)
+        if [ "" = "$2" ]
+        then
+           echo "error: Empty name can't add."
+           usage 
+           exit 1
+        fi
+        vi ${BASE_DIR}/$2.txt
+        exit 0
+        ;;
+    -r|--rm)
+        if [ -f ${BASE_DIR}/$2.txt ]
+        then
+            rm -i ${BASE_DIR}/$2.txt
+            exit 0
+        else
+            echo "error: I can't find hosts name. '$2'"
+            usage
+            exit 1
+        fi
+        ;;
+    -f|--fix)
+        if [ -f ${BASE_DIR}/$2.txt ]
+        then
+            vi ${BASE_DIR}/$2.txt
+            exit 0
+        else
+            echo "error: I can't find hosts name. '$2'"
+            usage
+            exit 1
+        fi
+        ;;
+    -n|--now)
+        show_hosts
+        exit 0
+        ;;
+    -h|--help)
+        usage
+        exit 0 
+        ;;
+    -v|--version)
+        echo "chhosts version" '"'${CHHOSTS_VESION}'"'
+        exit 0
+esac
+
+
+###############
+# function of change hosts 
+###############
+
+function change_hosts() {
+
+    if [ "" = "${FIRST_ARG}" ]
+    then
+        CHANGE_HOSTS=${DEFAULT_HOSTS}
+    else
+        CHANGE_HOSTS=${FIRST_ARG}
+    fi
+
+    cd ${BASE_DIR}
+
+    if [ -f ${CHANGE_HOSTS}.txt ]
+    then
+        sudo sh -c "cat ${CHANGE_HOSTS}.txt > /etc/hosts"
+    else
+        echo "error: I can't find hosts name. '${CHANGE_HOSTS}'"
+        return 1
+    fi
+    echo ${CHANGE_HOSTS} > ${NOW_HOSTS}
+    echo 'change hosts =>' `cat ${NOW_HOSTS}`
+    show_hosts
+    return 0 
+
+}
+
+###############
+# exception handling
+###############
+
+function error() {
+    
+    usage
+    exit 1
+
+}
+
+###############
+# main process
+###############
+
+change_hosts || error    
+
+
