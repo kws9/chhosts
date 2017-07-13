@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CHHOSTS_VESION="0.0.2"
+CHHOSTS_VESION="0.0.3"
 
 cd $(dirname $0)
 DEFAULT_HOSTS=default
@@ -113,6 +113,10 @@ function change_hosts() {
     if [ -f ${CHANGE_HOSTS}.txt ]
     then
         sudo sh -c "cat ${CHANGE_HOSTS}.txt > /etc/hosts"
+        if [ $? -eq 1 ]
+        then
+            exit 1
+        fi
     else
         echo "error: I can't find hosts name. '${CHANGE_HOSTS}'"
         return 1
